@@ -238,9 +238,6 @@ export function AppShell({ children }: { children: ReactNode }) {
             <DropdownMenuContent align="end" className="w-52">
               <DropdownMenuLabel>{user.email}</DropdownMenuLabel>
               <DropdownMenuSeparator />
-              <DropdownMenuItem onClick={() => navigate({ to: "/settings" })}>
-                <SettingsIcon className="size-4" /> Settings
-              </DropdownMenuItem>
               <DropdownMenuItem
                 onClick={() => {
                   logout();
