@@ -29,6 +29,7 @@ import {
 } from "@/components/ui/select";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { ConfirmDelete } from "@/components/common/confirm-delete";
+import { CameraScanner } from "@/components/pos/camera-scanner";
 import { EmptyState, Loader } from "@/components/common/states";
 import { Pagination, usePagination } from "@/components/common/pagination";
 import { exportExcel, importExcel } from "@/lib/excel";

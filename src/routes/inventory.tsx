@@ -30,6 +30,7 @@ import {
 } from "@/components/ui/select";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { EmptyState, Loader } from "@/components/common/states";
+import { CameraScanner } from "@/components/pos/camera-scanner";
 import { Pagination, usePagination } from "@/components/common/pagination";
 import { exportExcel } from "@/lib/excel";
 import { daysBetween, fmtDate, fmtDateTime, inr } from "@/lib/format";
