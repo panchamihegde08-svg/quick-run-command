@@ -59,10 +59,6 @@ export const NAV: { key: PageKey; label: string; to: string; icon: typeof Packag
   { key: "sales", label: "Sales History", to: "/sales", icon: ReceiptText },
   { key: "returns", label: "Sales Returns", to: "/returns", icon: Undo2 },
   { key: "expenses", label: "Expenses", to: "/expenses", icon: Wallet },
-  { key: "offers", label: "Offers & Discounts", to: "/offers", icon: BadgePercent },
-  { key: "employees", label: "Employees", to: "/employees", icon: IdCard },
-  { key: "reports", label: "Reports", to: "/reports", icon: BarChart3 },
-  { key: "settings", label: "Settings", to: "/settings", icon: SettingsIcon },
 ];
 
 function NavList({ onNavigate, collapsed }: { onNavigate?: () => void; collapsed?: boolean }) {
