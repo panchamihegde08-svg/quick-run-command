@@ -251,16 +251,29 @@ function InventoryPage() {
           <div className="space-y-4">
             <div className="space-y-2">
               <Label>Product</Label>
-              <Select value={productId} onValueChange={setProductId}>
-                <SelectTrigger><SelectValue placeholder="Select product" /></SelectTrigger>
-                <SelectContent className="max-h-72">
-                  {products.map((p) => (
-                    <SelectItem key={p.id} value={String(p.id)}>
-                      {p.name} ({p.stock} {p.unit})
-                    </SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
+              <div className="flex items-center gap-2">
+                <Select value={productId} onValueChange={setProductId}>
+                  <SelectTrigger className="flex-1"><SelectValue placeholder="Select product" /></SelectTrigger>
+                  <SelectContent className="max-h-72">
+                    {products.map((p) => (
+                      <SelectItem key={p.id} value={String(p.id)}>
+                        {p.name} ({p.stock} {p.unit})
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+                <CameraScanner
+                  onScan={(code) => {
+                    const p = products.find((x) => x.barcode === code || x.sku === code);
+                    if (p) {
+                      setProductId(String(p.id));
+                      toast.success(`Selected ${p.name}`);
+                    } else {
+                      toast.error("No product matches that code");
+                    }
+                  }}
+                />
+              </div>
             </div>
             <div className="space-y-2">
               <Label>Type</Label>
