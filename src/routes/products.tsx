@@ -220,6 +220,25 @@ function ProductsPage() {
         >
           <FileDown className="size-4" /> Export
         </Button>
+        <CameraScanner
+          label="Scan to add"
+          onScan={(code) => {
+            const existing = products.find((p) => p.barcode === code || p.sku === code);
+            if (existing) {
+              toast.info(`"${existing.name}" already exists — opened for editing`);
+              setForm(existing);
+            } else {
+              toast.success("Barcode captured — finish the product details");
+              setForm({
+                ...blank(),
+                barcode: code,
+                categoryId: categories[0]?.id ?? 0,
+                brandId: brands[0]?.id ?? 0,
+              });
+            }
+            setOpen(true);
+          }}
+        />
         <Button
           onClick={() => {
             setForm({ ...blank(), categoryId: categories[0]?.id ?? 0, brandId: brands[0]?.id ?? 0 });
@@ -328,7 +347,10 @@ function ProductsPage() {
               <Input value={form.sku} onChange={(e) => setForm({ ...form, sku: e.target.value })} />
             </Field>
             <Field label="Barcode">
-              <Input value={form.barcode} onChange={(e) => setForm({ ...form, barcode: e.target.value })} />
+              <div className="flex items-center gap-2">
+                <Input value={form.barcode} onChange={(e) => setForm({ ...form, barcode: e.target.value })} />
+                <CameraScanner onScan={(code) => setForm({ ...form, barcode: code })} />
+              </div>
             </Field>
             <Field label="HSN">
               <Input value={form.hsn} onChange={(e) => setForm({ ...form, hsn: e.target.value })} />
