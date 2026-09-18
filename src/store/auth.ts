@@ -3,7 +3,7 @@ import { persist } from "zustand/middleware";
 import type { Role } from "@/lib/types";
 
 export interface SessionUser {
-  id: number;
+  id: string;
   name: string;
   email: string;
   role: Role;
