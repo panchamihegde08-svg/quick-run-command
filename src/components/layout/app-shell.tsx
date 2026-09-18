@@ -31,7 +31,17 @@ import { cn } from "@/lib/utils";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Loader } from "@/components/common/states";
-import { initDb } from "@/lib/db";
+import { getDb, initDb } from "@/lib/db";
+import { supabase } from "@/integrations/supabase/client";
+import { loadSessionUser } from "@/lib/account";
+import {
+  getSyncState,
+  registerSyncHooks,
+  resetSyncState,
+  startSyncLoop,
+  subscribeSync,
+  syncNow,
+} from "@/lib/sync";
 import {
   DropdownMenu,
   DropdownMenuContent,
