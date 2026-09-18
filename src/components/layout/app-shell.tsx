@@ -1,6 +1,6 @@
 import { Link, useRouterState, useNavigate } from "@tanstack/react-router";
 import { motion, AnimatePresence } from "framer-motion";
-import { useEffect, type ReactNode } from "react";
+import { useEffect, useState, type ReactNode } from "react";
 import {
   LayoutDashboard,
   ScanBarcode,
@@ -31,7 +31,17 @@ import { cn } from "@/lib/utils";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Loader } from "@/components/common/states";
-import { initDb } from "@/lib/db";
+import { getDb, initDb } from "@/lib/db";
+import { supabase } from "@/integrations/supabase/client";
+import { loadSessionUser } from "@/lib/account";
+import {
+  getSyncState,
+  registerSyncHooks,
+  resetSyncState,
+  startSyncLoop,
+  subscribeSync,
+  syncNow,
+} from "@/lib/sync";
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -90,21 +100,50 @@ export function AppShell({ children }: { children: ReactNode }) {
   const hydrated = useHydrated();
   const online = useOnline();
   const { theme, toggleTheme, sidebarCollapsed, toggleSidebar } = useUI();
-  const { user, logout } = useAuth();
+  const { user, login, logout } = useAuth();
   const navigate = useNavigate();
   const pathname = useRouterState({ select: (s) => s.location.pathname });
+
+  const [sync, setSync] = useState(getSyncState());
 
   useEffect(() => {
     document.documentElement.classList.toggle("dark", theme === "dark");
   }, [theme]);
 
   useEffect(() => {
-    void initDb();
+    void (async () => {
+      await initDb();
+      registerSyncHooks(getDb());
+      startSyncLoop();
+    })();
+    return subscribeSync(() => setSync({ ...getSyncState() }));
   }, []);
+
+  // Keep the local session in step with the cloud account.
+  useEffect(() => {
+    if (!hydrated) return;
+    void (async () => {
+      const session = await loadSessionUser();
+      if (session) login(session);
+      else logout();
+    })();
+    const { data } = supabase.auth.onAuthStateChange((event) => {
+      if (event === "SIGNED_OUT") logout();
+    });
+    return () => data.subscription.unsubscribe();
+  }, [hydrated, login, logout]);
 
   useEffect(() => {
     if (hydrated && !user) navigate({ to: "/login" });
   }, [hydrated, user, navigate]);
+
+  const signOut = async () => {
+    await syncNow();
+    await supabase.auth.signOut();
+    resetSyncState();
+    logout();
+    navigate({ to: "/login" });
+  };
 
   if (!hydrated) {
     return (
