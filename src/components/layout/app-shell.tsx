@@ -1,6 +1,6 @@
 import { Link, useRouterState, useNavigate } from "@tanstack/react-router";
 import { motion, AnimatePresence } from "framer-motion";
-import { useEffect, type ReactNode } from "react";
+import { useEffect, useState, type ReactNode } from "react";
 import {
   LayoutDashboard,
   ScanBarcode,
@@ -100,7 +100,7 @@ export function AppShell({ children }: { children: ReactNode }) {
   const hydrated = useHydrated();
   const online = useOnline();
   const { theme, toggleTheme, sidebarCollapsed, toggleSidebar } = useUI();
-  const { user, logout } = useAuth();
+  const { user, login, logout } = useAuth();
   const navigate = useNavigate();
   const pathname = useRouterState({ select: (s) => s.location.pathname });
 
