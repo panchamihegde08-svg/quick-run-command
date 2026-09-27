@@ -137,7 +137,26 @@ function InventoryPage() {
         >
           <FileDown className="size-4" /> Export stock
         </Button>
-        <Button onClick={() => setOpen(true)}>
+        <CameraScanner
+          label="Scan to add stock"
+          variant="default"
+          onScan={(code) => {
+            const p = products.find((x) => x.barcode === code || x.sku === code);
+            if (p) {
+              setProductId(String(p.id));
+              setType("stock-in");
+              setQty(1);
+              setOpen(true);
+              toast.success(`Scanned ${p.name} — enter quantity to add`);
+            } else {
+              toast.error("No product with this code", {
+                description: "Add it first on the Products page.",
+                action: { label: "Go to Products", onClick: () => { window.location.href = "/products"; } },
+              });
+            }
+          }}
+        />
+        <Button variant="outline" onClick={() => setOpen(true)}>
           <PackageMinus className="size-4" /> Stock adjustment
         </Button>
       </div>
