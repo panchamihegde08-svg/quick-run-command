@@ -23,6 +23,7 @@ import {
   WifiOff,
   ShoppingBasket,
   Bell,
+  RefreshCw,
 } from "lucide-react";
 import { useUI } from "@/store/ui";
 import { canAccess, useAuth, type PageKey } from "@/store/auth";
@@ -284,12 +285,7 @@ export function AppShell({ children }: { children: ReactNode }) {
             <DropdownMenuContent align="end" className="w-52">
               <DropdownMenuLabel>{user.email}</DropdownMenuLabel>
               <DropdownMenuSeparator />
-              <DropdownMenuItem
-                onClick={() => {
-                  logout();
-                  navigate({ to: "/login" });
-                }}
-              >
+              <DropdownMenuItem onClick={() => void signOut()}>
                 <LogOut className="size-4" /> Logout
               </DropdownMenuItem>
             </DropdownMenuContent>
