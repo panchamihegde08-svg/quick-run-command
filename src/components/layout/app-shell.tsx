@@ -106,6 +106,7 @@ export function AppShell({ children }: { children: ReactNode }) {
   const pathname = useRouterState({ select: (s) => s.location.pathname });
 
   const [sync, setSync] = useState(getSyncState());
+  const [checked, setChecked] = useState(false);
 
   useEffect(() => {
     document.documentElement.classList.toggle("dark", theme === "dark");
@@ -153,7 +154,7 @@ export function AppShell({ children }: { children: ReactNode }) {
     navigate({ to: "/login" });
   };
 
-  if (!hydrated) {
+  if (!hydrated || (!checked && !user)) {
     return (
       <div className="grid min-h-screen place-items-center bg-background">
         <Loader label="Starting Smart Grocery POS..." />
