@@ -127,9 +127,13 @@ export function AppShell({ children }: { children: ReactNode }) {
   useEffect(() => {
     if (!hydrated) return;
     void (async () => {
-      const session = await loadSessionUser();
-      if (session) login(session);
-      else logout();
+      try {
+        const session = await loadSessionUser();
+        if (session) login(session);
+        else logout();
+      } finally {
+        setChecked(true);
+      }
     })();
     const { data } = supabase.auth.onAuthStateChange((event) => {
       if (event === "SIGNED_OUT") logout();
@@ -138,8 +142,8 @@ export function AppShell({ children }: { children: ReactNode }) {
   }, [hydrated, login, logout]);
 
   useEffect(() => {
-    if (hydrated && !user) navigate({ to: "/login" });
-  }, [hydrated, user, navigate]);
+    if (hydrated && checked && !user) navigate({ to: "/login" });
+  }, [hydrated, checked, user, navigate]);
 
   const signOut = async () => {
     await syncNow();
