@@ -23,6 +23,7 @@ import {
   WifiOff,
   ShoppingBasket,
   Bell,
+  RefreshCw,
 } from "lucide-react";
 import { useUI } from "@/store/ui";
 import { canAccess, useAuth, type PageKey } from "@/store/auth";
@@ -105,6 +106,7 @@ export function AppShell({ children }: { children: ReactNode }) {
   const pathname = useRouterState({ select: (s) => s.location.pathname });
 
   const [sync, setSync] = useState(getSyncState());
+  const [checked, setChecked] = useState(false);
 
   useEffect(() => {
     document.documentElement.classList.toggle("dark", theme === "dark");
@@ -116,16 +118,23 @@ export function AppShell({ children }: { children: ReactNode }) {
       registerSyncHooks(getDb());
       startSyncLoop();
     })();
-    return subscribeSync(() => setSync({ ...getSyncState() }));
+    const unsubscribe = subscribeSync(() => setSync({ ...getSyncState() }));
+    return () => {
+      unsubscribe();
+    };
   }, []);
 
   // Keep the local session in step with the cloud account.
   useEffect(() => {
     if (!hydrated) return;
     void (async () => {
-      const session = await loadSessionUser();
-      if (session) login(session);
-      else logout();
+      try {
+        const session = await loadSessionUser();
+        if (session) login(session);
+        else logout();
+      } finally {
+        setChecked(true);
+      }
     })();
     const { data } = supabase.auth.onAuthStateChange((event) => {
       if (event === "SIGNED_OUT") logout();
@@ -134,8 +143,8 @@ export function AppShell({ children }: { children: ReactNode }) {
   }, [hydrated, login, logout]);
 
   useEffect(() => {
-    if (hydrated && !user) navigate({ to: "/login" });
-  }, [hydrated, user, navigate]);
+    if (hydrated && checked && !user) navigate({ to: "/login" });
+  }, [hydrated, checked, user, navigate]);
 
   const signOut = async () => {
     await syncNow();
@@ -145,7 +154,7 @@ export function AppShell({ children }: { children: ReactNode }) {
     navigate({ to: "/login" });
   };
 
-  if (!hydrated) {
+  if (!hydrated || (!checked && !user)) {
     return (
       <div className="grid min-h-screen place-items-center bg-background">
         <Loader label="Starting Smart Grocery POS..." />
@@ -184,8 +193,7 @@ export function AppShell({ children }: { children: ReactNode }) {
         <div className="border-t border-sidebar-border p-2">
           <button
             onClick={() => {
-              logout();
-              navigate({ to: "/login" });
+              void signOut();
             }}
             className="flex w-full items-center gap-3 rounded-lg px-3 py-2 text-sm font-medium text-sidebar-foreground/80 transition-colors hover:bg-destructive/20 hover:text-sidebar-foreground"
           >
@@ -243,6 +251,22 @@ export function AppShell({ children }: { children: ReactNode }) {
             {online ? "Online" : "Offline"}
           </Badge>
 
+          <Badge
+            variant="outline"
+            title="Cloud sync"
+            className="hidden gap-1.5 md:inline-flex"
+            onClick={() => void syncNow()}
+          >
+            <RefreshCw className={cn("size-3.5", sync.status === "syncing" && "animate-spin")} />
+            {sync.status === "syncing"
+              ? "Syncing"
+              : sync.pending > 0
+                ? `${sync.pending} to sync`
+                : sync.status === "error"
+                  ? "Sync failed"
+                  : "Synced"}
+          </Badge>
+
           <Button variant="ghost" size="icon" onClick={toggleTheme} aria-label="Toggle theme">
             {theme === "dark" ? <Sun className="size-5" /> : <Moon className="size-5" />}
           </Button>
@@ -269,12 +293,7 @@ export function AppShell({ children }: { children: ReactNode }) {
             <DropdownMenuContent align="end" className="w-52">
               <DropdownMenuLabel>{user.email}</DropdownMenuLabel>
               <DropdownMenuSeparator />
-              <DropdownMenuItem
-                onClick={() => {
-                  logout();
-                  navigate({ to: "/login" });
-                }}
-              >
+              <DropdownMenuItem onClick={() => void signOut()}>
                 <LogOut className="size-4" /> Logout
               </DropdownMenuItem>
             </DropdownMenuContent>
