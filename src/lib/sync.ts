@@ -71,11 +71,23 @@ function countDirty(map: DirtyMap) {
   return Object.values(map).reduce((n, rows) => n + Object.keys(rows).length, 0);
 }
 
+let debounce: ReturnType<typeof setTimeout> | null = null;
+
+function scheduleSync() {
+  if (typeof window === "undefined") return;
+  if (debounce) clearTimeout(debounce);
+  debounce = setTimeout(() => {
+    debounce = null;
+    void syncNow();
+  }, 2500);
+}
+
 function mark(entity: string, id: number | string | undefined, kind: "u" | "d") {
   if (applyingRemote || id === undefined || id === null) return;
   const map = readDirty();
   map[entity] = { ...(map[entity] ?? {}), [String(id)]: kind };
   writeDirty(map);
+  scheduleSync();
 }
 
 /** Records every local create/update/delete so it can be pushed when online. */
