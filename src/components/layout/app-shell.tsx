@@ -184,8 +184,7 @@ export function AppShell({ children }: { children: ReactNode }) {
         <div className="border-t border-sidebar-border p-2">
           <button
             onClick={() => {
-              logout();
-              navigate({ to: "/login" });
+              void signOut();
             }}
             className="flex w-full items-center gap-3 rounded-lg px-3 py-2 text-sm font-medium text-sidebar-foreground/80 transition-colors hover:bg-destructive/20 hover:text-sidebar-foreground"
           >
@@ -241,6 +240,22 @@ export function AppShell({ children }: { children: ReactNode }) {
           >
             {online ? <Wifi className="size-3.5" /> : <WifiOff className="size-3.5" />}
             {online ? "Online" : "Offline"}
+          </Badge>
+
+          <Badge
+            variant="outline"
+            title="Cloud sync"
+            className="hidden gap-1.5 md:inline-flex"
+            onClick={() => void syncNow()}
+          >
+            <RefreshCw className={cn("size-3.5", sync.status === "syncing" && "animate-spin")} />
+            {sync.status === "syncing"
+              ? "Syncing"
+              : sync.pending > 0
+                ? `${sync.pending} to sync`
+                : sync.status === "error"
+                  ? "Sync failed"
+                  : "Synced"}
           </Badge>
 
           <Button variant="ghost" size="icon" onClick={toggleTheme} aria-label="Toggle theme">
