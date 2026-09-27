@@ -117,7 +117,10 @@ export function AppShell({ children }: { children: ReactNode }) {
       registerSyncHooks(getDb());
       startSyncLoop();
     })();
-    return subscribeSync(() => setSync({ ...getSyncState() }));
+    const unsubscribe = subscribeSync(() => setSync({ ...getSyncState() }));
+    return () => {
+      unsubscribe();
+    };
   }, []);
 
   // Keep the local session in step with the cloud account.

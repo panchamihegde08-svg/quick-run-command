@@ -105,7 +105,8 @@ async function pushDirty(db: GroceryDB) {
   const rows: {
     entity: string;
     local_id: number;
-    payload: Record<string, unknown>;
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    payload: any;
     deleted: boolean;
   }[] = [];
 
