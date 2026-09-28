@@ -258,7 +258,8 @@ function ProductsPage() {
                 <TableHead>Category</TableHead>
                 <TableHead>Brand</TableHead>
                 <TableHead className="text-right">Purchase</TableHead>
-                <TableHead className="text-right">Selling</TableHead>
+                <TableHead className="text-right">MRP</TableHead>
+                <TableHead className="text-right">Our Price</TableHead>
                 <TableHead className="text-right">GST</TableHead>
                 <TableHead className="text-right">Stock</TableHead>
                 <TableHead>Expiry</TableHead>
@@ -277,7 +278,8 @@ function ProductsPage() {
                   <TableCell>{catName(p.categoryId)}</TableCell>
                   <TableCell>{brandName(p.brandId)}</TableCell>
                   <TableCell className="text-right">{inr(p.purchasePrice)}</TableCell>
-                  <TableCell className="text-right">{inr(p.sellingPrice)}</TableCell>
+                  <TableCell className="text-right">{inr(p.mrp)}</TableCell>
+                  <TableCell className="text-right font-semibold">{inr(p.sellingPrice)}</TableCell>
                   <TableCell className="text-right">{p.gst}%</TableCell>
                   <TableCell className="text-right">
                     <Badge
@@ -388,14 +390,30 @@ function ProductsPage() {
             <Field label="GST %">
               <Input type="number" value={form.gst} onChange={(e) => setForm({ ...form, gst: Number(e.target.value) })} />
             </Field>
-            <Field label="Purchase price">
+            <Field label="Purchase price (our cost)">
               <Input type="number" value={form.purchasePrice} onChange={(e) => setForm({ ...form, purchasePrice: Number(e.target.value) })} />
             </Field>
-            <Field label="Selling price">
-              <Input type="number" value={form.sellingPrice} onChange={(e) => setForm({ ...form, sellingPrice: Number(e.target.value) })} />
+            <Field label="MRP (printed price)">
+              <Input
+                type="number"
+                value={form.mrp}
+                onChange={(e) => {
+                  const mrp = Number(e.target.value);
+                  setForm({ ...form, mrp, sellingPrice: form.sellingPrice ? form.sellingPrice : mrp });
+                }}
+              />
             </Field>
-            <Field label="MRP">
-              <Input type="number" value={form.mrp} onChange={(e) => setForm({ ...form, mrp: Number(e.target.value) })} />
+            <Field label="Our selling price">
+              <Input type="number" value={form.sellingPrice} onChange={(e) => setForm({ ...form, sellingPrice: Number(e.target.value) })} />
+              {form.mrp > 0 && form.sellingPrice > 0 && (
+                <p className={`text-xs ${form.sellingPrice > form.mrp ? "text-destructive" : "text-muted-foreground"}`}>
+                  {form.sellingPrice > form.mrp
+                    ? "Selling price is above MRP"
+                    : form.sellingPrice < form.mrp
+                      ? `Customer saves ${inr(form.mrp - form.sellingPrice)} (${(((form.mrp - form.sellingPrice) / form.mrp) * 100).toFixed(0)}% off)`
+                      : "Selling at MRP (no discount)"}
+                </p>
+              )}
             </Field>
             <Field label="Stock">
               <Input type="number" value={form.stock} onChange={(e) => setForm({ ...form, stock: Number(e.target.value) })} />
