@@ -430,10 +430,17 @@ function PosPage() {
                         <Plus className="size-3.5" />
                       </Button>
                     </div>
-                    <span className="text-xs text-muted-foreground">
-                      {i.unit} ×{" "}
-                      {i.mrp > i.price && <span className="line-through mr-1">{inr(i.mrp)}</span>}
-                      <span className="font-semibold text-foreground">{inr(i.price)}</span>
+                    <span className="flex flex-col text-xs leading-tight text-muted-foreground">
+                      <span>
+                        MRP{" "}
+                        <span className={i.mrp > i.price ? "line-through" : ""}>
+                          {inr(i.mrp || i.price)}
+                        </span>
+                      </span>
+                      <span>
+                        Our {i.unit} ×{" "}
+                        <span className="font-semibold text-foreground">{inr(i.price)}</span>
+                      </span>
                     </span>
                     <Input
                       className="h-8 w-20"
