@@ -3,6 +3,12 @@ import autoTable from "jspdf-autotable";
 import type { Sale, Settings } from "./types";
 import { fmtDateTime, inr } from "./format";
 
+export const mrpTotal = (sale: Sale) =>
+  sale.items.reduce((s, i) => s + Math.max(i.mrp || 0, i.price) * i.qty, 0);
+
+export const savedAmt = (sale: Sale) =>
+  Math.max(0, Math.round((mrpTotal(sale) - sale.total) * 100) / 100);
+
 export function buildInvoicePdf(sale: Sale, s: Settings) {
   const doc = new jsPDF();
   doc.setFontSize(16);
@@ -24,12 +30,13 @@ export function buildInvoicePdf(sale: Sale, s: Settings) {
 
   autoTable(doc, {
     startY: 58,
-    head: [["#", "Item", "HSN", "Qty", "Rate", "Disc", "GST%", "Amount"]],
+    head: [["#", "Item", "HSN", "Qty", "MRP", "Rate", "Disc", "GST%", "Amount"]],
     body: sale.items.map((i, idx) => [
       idx + 1,
       i.name,
       i.hsn,
       `${i.qty} ${i.unit}`,
+      (i.mrp || i.price).toFixed(2),
       i.price.toFixed(2),
       i.discount.toFixed(2),
       i.gst,
@@ -42,6 +49,7 @@ export function buildInvoicePdf(sale: Sale, s: Settings) {
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
   let y = (doc as any).lastAutoTable.finalY + 8;
   const rows: [string, string][] = [
+    ["Total MRP", inr(mrpTotal(sale))],
     ["Subtotal", inr(sale.subtotal)],
     ["Item Discount", "-" + inr(sale.itemDiscount)],
     ["Bill Discount", "-" + inr(sale.billDiscount)],
@@ -58,6 +66,11 @@ export function buildInvoicePdf(sale: Sale, s: Settings) {
     doc.text(k, 140, y);
     doc.text(v, 196, y, { align: "right" });
     y += 5.5;
+  }
+  if (savedAmt(sale) > 0) {
+    doc.setFontSize(11);
+    doc.text(`You saved ${inr(savedAmt(sale))} on this bill!`, 14, y + 2);
+    y += 6;
   }
   doc.setFontSize(8);
   doc.text(s.footerNote, 14, y + 6);
@@ -94,16 +107,17 @@ export function thermalHtml(sale: Sale, s: Settings) {
   <div>Customer: ${sale.customerName}</div>
   <div>${line}</div>
   <table>
-    <tr class="b"><td>Item</td><td class="r">Qty</td><td class="r">Rate</td><td class="r">Amt</td></tr>
+    <tr class="b"><td>Item</td><td class="r">Qty</td><td class="r">MRP</td><td class="r">Rate</td><td class="r">Amt</td></tr>
     ${sale.items
       .map(
         (i) =>
-          `<tr><td colspan="4">${i.name}</td></tr><tr><td></td><td class="r">${i.qty} ${i.unit}</td><td class="r">${i.price.toFixed(2)}</td><td class="r">${i.total.toFixed(2)}</td></tr>`,
+          `<tr><td colspan="5">${i.name}</td></tr><tr><td></td><td class="r">${i.qty} ${i.unit}</td><td class="r">${(i.mrp || i.price).toFixed(2)}</td><td class="r">${i.price.toFixed(2)}</td><td class="r">${i.total.toFixed(2)}</td></tr>`,
       )
       .join("")}
   </table>
   <div>${line}</div>
   <table>
+    <tr><td>Total MRP</td><td class="r">${mrpTotal(sale).toFixed(2)}</td></tr>
     <tr><td>Subtotal</td><td class="r">${sale.subtotal.toFixed(2)}</td></tr>
     <tr><td>Discount</td><td class="r">-${(sale.itemDiscount + sale.billDiscount).toFixed(2)}</td></tr>
     <tr><td>CGST</td><td class="r">${sale.cgst.toFixed(2)}</td></tr>
@@ -114,6 +128,7 @@ export function thermalHtml(sale: Sale, s: Settings) {
     <tr><td>Change</td><td class="r">${sale.change.toFixed(2)}</td></tr>
   </table>
   <div>${line}</div>
+  ${savedAmt(sale) > 0 ? `<div class="c b" style="font-size:13px">*** YOU SAVED Rs ${savedAmt(sale).toFixed(2)} ***</div><div>${line}</div>` : ""}
   <div class="c">${s.footerNote}</div>
   <script>window.onload=function(){window.print()}<\/script>
   </body></html>`;

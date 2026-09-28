@@ -431,7 +431,9 @@ function PosPage() {
                       </Button>
                     </div>
                     <span className="text-xs text-muted-foreground">
-                      {i.unit} × {inr(i.price)}
+                      {i.unit} ×{" "}
+                      {i.mrp > i.price && <span className="line-through mr-1">{inr(i.mrp)}</span>}
+                      <span className="font-semibold text-foreground">{inr(i.price)}</span>
                     </span>
                     <Input
                       className="h-8 w-20"
@@ -439,7 +441,14 @@ function PosPage() {
                       value={i.discount || ""}
                       onChange={(e) => cart.setDiscount(i.productId, Number(e.target.value) || 0)}
                     />
-                    <span className="ml-auto text-sm font-bold">{inr(i.total)}</span>
+                    <span className="ml-auto text-right">
+                      {Math.max(i.mrp, i.price) * i.qty > i.total && (
+                        <span className="block text-xs text-muted-foreground line-through">
+                          {inr(Math.max(i.mrp, i.price) * i.qty)}
+                        </span>
+                      )}
+                      <span className="text-sm font-bold">{inr(i.total)}</span>
+                    </span>
                   </div>
                 </div>
               ))}
