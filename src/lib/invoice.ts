@@ -30,18 +30,22 @@ export function buildInvoicePdf(sale: Sale, s: Settings) {
 
   autoTable(doc, {
     startY: 58,
-    head: [["#", "Item", "HSN", "Qty", "MRP", "Rate", "Disc", "GST%", "Amount"]],
-    body: sale.items.map((i, idx) => [
-      idx + 1,
-      i.name,
-      i.hsn,
-      `${i.qty} ${i.unit}`,
-      (i.mrp || i.price).toFixed(2),
-      i.price.toFixed(2),
-      i.discount.toFixed(2),
-      i.gst,
-      i.total.toFixed(2),
-    ]),
+    head: [["#", "Item", "HSN", "Qty", "MRP", "Rate", "Disc", "Save", "GST%", "Amount"]],
+    body: sale.items.map((i, idx) => {
+      const save = Math.max(0, Math.round((Math.max(i.mrp || 0, i.price) * i.qty - i.total) * 100) / 100);
+      return [
+        idx + 1,
+        i.name,
+        i.hsn,
+        `${i.qty} ${i.unit}`,
+        (i.mrp || i.price).toFixed(2),
+        i.price.toFixed(2),
+        i.discount.toFixed(2),
+        save > 0 ? save.toFixed(2) : "-",
+        i.gst,
+        i.total.toFixed(2),
+      ];
+    }),
     styles: { fontSize: 8 },
     headStyles: { fillColor: [22, 128, 61] },
   });
@@ -109,10 +113,10 @@ export function thermalHtml(sale: Sale, s: Settings) {
   <table>
     <tr class="b"><td>Item</td><td class="r">Qty</td><td class="r">MRP</td><td class="r">Rate</td><td class="r">Amt</td></tr>
     ${sale.items
-      .map(
-        (i) =>
-          `<tr><td colspan="5">${i.name}</td></tr><tr><td></td><td class="r">${i.qty} ${i.unit}</td><td class="r">${(i.mrp || i.price).toFixed(2)}</td><td class="r">${i.price.toFixed(2)}</td><td class="r">${i.total.toFixed(2)}</td></tr>`,
-      )
+      .map((i) => {
+        const save = Math.max(0, Math.max(i.mrp || 0, i.price) * i.qty - i.total);
+        return `<tr><td colspan="5">${i.name}</td></tr><tr><td></td><td class="r">${i.qty} ${i.unit}</td><td class="r">${(i.mrp || i.price).toFixed(2)}</td><td class="r">${i.price.toFixed(2)}</td><td class="r">${i.total.toFixed(2)}</td></tr>${save > 0 ? `<tr><td colspan="5" style="font-size:10px">* You save ${save.toFixed(2)}</td></tr>` : ""}`;
+      })
       .join("")}
   </table>
   <div>${line}</div>
