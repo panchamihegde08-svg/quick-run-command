@@ -441,9 +441,9 @@ function PosPage() {
                         Our {i.unit} ×{" "}
                         <span className="font-semibold text-foreground">{inr(i.price)}</span>
                       </span>
-                      {Math.max(i.mrp, i.price) * i.qty - i.total > 0 && (
+                      {i.mrp > i.price && (
                         <span className="text-xs font-medium text-emerald-600">
-                          Save {inr(Math.max(i.mrp, i.price) * i.qty - i.total)}
+                          Discount {inr(i.mrp - i.price)}
                         </span>
                       )}
                     </span>
