@@ -441,6 +441,11 @@ function PosPage() {
                         Our {i.unit} ×{" "}
                         <span className="font-semibold text-foreground">{inr(i.price)}</span>
                       </span>
+                      {Math.max(i.mrp, i.price) * i.qty - i.total > 0 && (
+                        <span className="text-xs font-medium text-emerald-600">
+                          Save {inr(Math.max(i.mrp, i.price) * i.qty - i.total)}
+                        </span>
+                      )}
                     </span>
                     <Input
                       className="h-8 w-20"
