@@ -9,7 +9,7 @@ import { DEFAULT_UPI_ID, makeUpiQr, type UpiQrResult } from "@/lib/upi";
 interface Props {
   amount: number;
   shopName: string;
-  upiId?: string;
+  upiId?: string | undefined;
   onSaveUpiId: (v: string) => Promise<void> | void;
 }
 

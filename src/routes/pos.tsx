@@ -51,6 +51,7 @@ import {
 } from "@/components/ui/dialog";
 import { EmptyState, Loader } from "@/components/common/states";
 import { CameraScanner } from "@/components/pos/camera-scanner";
+import { UpiQrPanel } from "@/components/pos/upi-qr-panel";
 import { cn } from "@/lib/utils";
 
 export const Route = createFileRoute("/pos")({
@@ -266,7 +267,14 @@ function PosPage() {
     }
   };
 
-  const balance = Number(received || 0) - totals.total;
+  const balance =
+    (received === "" ? totals.total : Number(received)) - totals.total;
+
+  const saveUpiId = async (v: string) => {
+    await db.settings.update(1, { upiId: v });
+    setSettings((s) => (s ? { ...s, upiId: v } : s));
+  };
+
 
   return (
     <div className="grid gap-4 p-3 sm:p-4 xl:grid-cols-[1.5fr_1fr_0.9fr]">
@@ -682,6 +690,14 @@ function PosPage() {
                     onChange={(e) => setSplitUpi(e.target.value)}
                   />
                 </div>
+              )}
+              {(method === "UPI" || (method === "Split" && Number(splitUpi) >= 1)) && (
+                <UpiQrPanel
+                  amount={method === "Split" ? Number(splitUpi) : totals.total}
+                  shopName={settings?.shopName ?? "Shop"}
+                  upiId={settings?.upiId}
+                  onSaveUpiId={saveUpiId}
+                />
               )}
               <div className="rounded-lg bg-muted p-3 text-sm">
                 <div className="flex justify-between">
