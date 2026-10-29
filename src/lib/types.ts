@@ -297,6 +297,7 @@ export interface Settings {
   thermalWidth: 58 | 80;
   footerNote: string;
   notifications: boolean;
+  upiId?: string | undefined;
 }
 
 export interface SyncItem {

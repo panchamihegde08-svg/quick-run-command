@@ -51,6 +51,7 @@ import {
 } from "@/components/ui/dialog";
 import { EmptyState, Loader } from "@/components/common/states";
 import { CameraScanner } from "@/components/pos/camera-scanner";
+import { UpiQrPanel } from "@/components/pos/upi-qr-panel";
 import { cn } from "@/lib/utils";
 
 export const Route = createFileRoute("/pos")({
