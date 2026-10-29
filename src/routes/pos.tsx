@@ -267,7 +267,8 @@ function PosPage() {
     }
   };
 
-  const balance = Number(received || 0) - totals.total;
+  const balance =
+    (received === "" ? totals.total : Number(received)) - totals.total;
 
   const saveUpiId = async (v: string) => {
     await db.settings.update(1, { upiId: v });
