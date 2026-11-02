@@ -439,20 +439,20 @@ function PosPage() {
                         variant="ghost"
                         size="icon"
                         className="size-8"
-                        onClick={() => cart.setQty(i.productId, i.qty - 1)}
+                        onClick={() => changeQty(i.productId, i.qty - 1)}
                       >
                         <Minus className="size-3.5" />
                       </Button>
                       <Input
                         className="h-8 w-16 border-0 text-center"
                         value={i.qty}
-                        onChange={(e) => cart.setQty(i.productId, Number(e.target.value) || 0)}
+                        onChange={(e) => changeQty(i.productId, Number(e.target.value) || 0)}
                       />
                       <Button
                         variant="ghost"
                         size="icon"
                         className="size-8"
-                        onClick={() => cart.setQty(i.productId, i.qty + 1)}
+                        onClick={() => changeQty(i.productId, i.qty + 1)}
                       >
                         <Plus className="size-3.5" />
                       </Button>
