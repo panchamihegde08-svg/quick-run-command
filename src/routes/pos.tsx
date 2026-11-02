@@ -468,9 +468,9 @@ function PosPage() {
                         Our {i.unit} ×{" "}
                         <span className="font-semibold text-foreground">{inr(i.price)}</span>
                       </span>
-                      {i.mrp > i.price && (
+                      {i.purchasePrice > i.price && (
                         <span className="text-xs font-medium text-emerald-600">
-                          Discount {inr(i.mrp - i.price)}
+                          Discount {inr(i.purchasePrice - i.price)}
                         </span>
                       )}
                     </span>
