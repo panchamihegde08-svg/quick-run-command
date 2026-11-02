@@ -165,6 +165,16 @@ function PosPage() {
     cart.add(p);
   };
 
+  /** Quantity changes are limited to the stock the shop actually has. */
+  const changeQty = (productId: number, qty: number) => {
+    const p = products.find((x) => x.id === productId);
+    if (p && qty > p.stock) {
+      toast.error(`Stock limit — only ${p.stock} ${p.unit} of ${p.name} available`);
+      qty = p.stock;
+    }
+    cart.setQty(productId, qty);
+  };
+
   const handleScan = (code: string) => {
     const p = products.find((x) => x.barcode === code || x.sku === code);
     if (!p) {
@@ -222,6 +232,15 @@ function PosPage() {
 
   const doCheckout = async () => {
     if (!cart.items.length) return;
+    const overStock = cart.items.find((i) => {
+      const p = products.find((x) => x.id === i.productId);
+      return p && i.qty > p.stock;
+    });
+    if (overStock) {
+      const p = products.find((x) => x.id === overStock.productId);
+      toast.error(`Stock limit — only ${p?.stock} ${p?.unit} of ${overStock.name} available`);
+      return;
+    }
     setBusy(true);
     try {
       const rec = method === "Credit" ? 0 : Number(received || totals.total);
