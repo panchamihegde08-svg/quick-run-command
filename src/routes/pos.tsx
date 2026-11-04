@@ -25,7 +25,7 @@ import { computeTotals, useCart } from "@/store/cart";
 import { useAuth } from "@/store/auth";
 import { completeSale, getSettings } from "@/lib/sales";
 import { downloadInvoice, printA4, printThermal, whatsappShare } from "@/lib/invoice";
-import { inr } from "@/lib/format";
+import { inr, round2 } from "@/lib/format";
 import type { Customer, PaymentMethod, Product, Sale, Settings } from "@/lib/types";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -133,6 +133,10 @@ function PosPage() {
         roundOffEnabled: settings?.roundOff ?? true,
       }),
     [cart.items, cart.billDiscount, cart.billDiscountType, cart.couponValue, cart.pointsRedeemed, settings],
+  );
+
+  const mrpSavings = round2(
+    cart.items.reduce((s, i) => s + Math.max(0, i.mrp - i.price) * i.qty, 0),
   );
 
   if (!data || !settings) return <Loader label="Preparing billing screen..." />;
@@ -627,6 +631,9 @@ function PosPage() {
 
         <dl className="space-y-1.5 text-sm">
           <Row label="Subtotal" value={inr(totals.gross)} />
+          {mrpSavings > 0 && (
+            <Row label="Discount (MRP − our price)" value={"-" + inr(mrpSavings)} />
+          )}
           <Row label="Item discount" value={"-" + inr(totals.itemDiscount)} />
           <Row label="Bill discount" value={"-" + inr(totals.billDiscountAmt)} />
           {totals.couponAmt > 0 && <Row label={`Coupon ${cart.coupon}`} value={"-" + inr(totals.couponAmt)} />}
@@ -662,6 +669,9 @@ function PosPage() {
           <DialogContent className="max-w-md">
             <DialogHeader>
               <DialogTitle>Payment · {inr(totals.total)}</DialogTitle>
+              {mrpSavings > 0 && (
+                <p className="text-xs text-success">Discount applied: −{inr(mrpSavings)} (MRP − our price)</p>
+              )}
             </DialogHeader>
             <div className="space-y-3">
               <div className="grid grid-cols-3 gap-2">
