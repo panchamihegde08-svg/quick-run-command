@@ -13,26 +13,82 @@ export const mrpDiscount = (sale: Sale) =>
   Math.round(sale.items.reduce((s, i) => s + Math.max(0, (i.mrp || 0) - i.price) * i.qty, 0) * 100) / 100;
 
 export function buildInvoicePdf(sale: Sale, s: Settings) {
-  const doc = new jsPDF();
-  doc.setFontSize(16);
-  doc.text(s.shopName, 14, 18);
+  const doc = new jsPDF({ unit: "mm", format: "a4" });
+  const W = 210;
+  const GREEN: [number, number, number] = [22, 128, 61];
+  const LIGHT: [number, number, number] = [244, 249, 244];
+  const GREY: [number, number, number] = [90, 90, 90];
+
+  // Page border
+  doc.setDrawColor(...GREEN);
+  doc.setLineWidth(0.4);
+  doc.rect(8, 8, W - 16, 281);
+
+  // Header band with shop name
+  doc.setFillColor(...GREEN);
+  doc.rect(8, 8, W - 16, 26, "F");
+  doc.setTextColor(255, 255, 255);
+  doc.setFont("helvetica", "bold");
+  doc.setFontSize(22);
+  doc.text(s.shopName, 15, 24);
+  doc.setFont("helvetica", "normal");
+  doc.setFontSize(11);
+  doc.text("TAX INVOICE", W - 15, 24, { align: "right" });
+
+  // Shop contact details (left) + invoice details (right)
+  doc.setTextColor(...GREY);
   doc.setFontSize(9);
-  doc.text(s.address, 14, 24, { maxWidth: 110 });
-  doc.text(`Phone: ${s.mobile}`, 14, 34);
-  doc.text(`GSTIN: ${s.gstin}`, 14, 39);
+  let hy = 42;
+  if (s.address) {
+    const addrLines = doc.splitTextToSize(s.address, 100) as string[];
+    doc.text(addrLines, 15, hy);
+    hy += addrLines.length * 4.5;
+  }
+  if (s.mobile) {
+    doc.text(`Phone: ${s.mobile}`, 15, hy);
+    hy += 4.5;
+  }
+  if (s.gstin) {
+    doc.text(`GSTIN: ${s.gstin}`, 15, hy);
+    hy += 4.5;
+  }
 
-  doc.setFontSize(13);
-  doc.text("TAX INVOICE", 196, 18, { align: "right" });
+  const metaRows: [string, string][] = [
+    ["Invoice No.", sale.invoiceNo],
+    ["Date", fmtDateTime(sale.date)],
+    ["Cashier", sale.cashier],
+  ];
+  const metaX = 132;
+  const metaY0 = 40;
+  doc.setDrawColor(200, 210, 200);
+  doc.setFillColor(...LIGHT);
+  doc.rect(metaX - 2, metaY0 - 5, W - 15 - metaX + 2, metaRows.length * 6 + 4, "FD");
+  doc.setFont("helvetica", "bold");
   doc.setFontSize(9);
-  doc.text(`Invoice: ${sale.invoiceNo}`, 196, 25, { align: "right" });
-  doc.text(`Date: ${fmtDateTime(sale.date)}`, 196, 30, { align: "right" });
-  doc.text(`Cashier: ${sale.cashier}`, 196, 35, { align: "right" });
+  metaRows.forEach(([k, v], i) => {
+    doc.setTextColor(...GREY);
+    doc.text(k, metaX + 2, metaY0 + i * 6);
+    doc.setTextColor(30, 30, 30);
+    doc.text(v, W - 17, metaY0 + i * 6, { align: "right" });
+  });
 
-  doc.text(`Bill To: ${sale.customerName}`, 14, 48);
-  if (sale.customerMobile) doc.text(`Mobile: ${sale.customerMobile}`, 14, 53);
+  // Bill To
+  const billToY = Math.max(hy + 4, metaY0 + metaRows.length * 6 + 3);
+  doc.setTextColor(...GREY);
+  doc.setFont("helvetica", "normal");
+  doc.setFontSize(8);
+  doc.text("BILL TO", 15, billToY);
+  doc.setTextColor(30, 30, 30);
+  doc.setFont("helvetica", "bold");
+  doc.setFontSize(11);
+  doc.text(sale.customerName || "Walk-in Customer", 15, billToY + 5);
+  doc.setFont("helvetica", "normal");
+  doc.setFontSize(9);
+  if (sale.customerMobile) doc.text(`Mobile: ${sale.customerMobile}`, 15, billToY + 10);
 
+  // Items table
   autoTable(doc, {
-    startY: 58,
+    startY: billToY + 16,
     head: [["#", "Item", "HSN", "Qty", "MRP", "Rate", "Disc", "Discount", "GST%", "Amount"]],
     body: sale.items.map((i, idx) => {
       const save = i.mrp > i.price ? (i.mrp - i.price) * i.qty : 0;
@@ -49,13 +105,26 @@ export function buildInvoicePdf(sale: Sale, s: Settings) {
         i.total.toFixed(2),
       ];
     }),
-    styles: { fontSize: 8 },
-    headStyles: { fillColor: [22, 128, 61] },
+    theme: "grid",
+    styles: { fontSize: 8, cellPadding: 1.6, lineColor: [220, 228, 220] as [number, number, number] },
+    headStyles: { fillColor: GREEN, textColor: [255, 255, 255] as [number, number, number], fontSize: 8, fontStyle: "bold" },
+    alternateRowStyles: { fillColor: LIGHT },
+    columnStyles: {
+      0: { halign: "center", cellWidth: 8 },
+      3: { halign: "center", cellWidth: 16 },
+      4: { halign: "right" },
+      5: { halign: "right" },
+      6: { halign: "right" },
+      7: { halign: "right" },
+      8: { halign: "center", cellWidth: 12 },
+      9: { halign: "right", fontStyle: "bold" },
+    },
   });
 
+  // Totals block (right side)
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  let y = (doc as any).lastAutoTable.finalY + 8;
-  const rows: [string, string][] = [
+  let y = (doc as any).lastAutoTable.finalY + 6;
+  const rows: [string, string, boolean?][] = [
     ["Total MRP", inr(mrpTotal(sale))],
     ["Subtotal", inr(sale.subtotal)],
     ["Discount (MRP − our price)", "-" + inr(mrpDiscount(sale))],
@@ -66,23 +135,93 @@ export function buildInvoicePdf(sale: Sale, s: Settings) {
     ["SGST", inr(sale.sgst)],
     ["IGST", inr(sale.igst)],
     ["Round Off", inr(sale.roundOff)],
-    ["GRAND TOTAL", inr(sale.total)],
+    ["GRAND TOTAL", inr(sale.total), true],
     ["Payment", sale.paymentMethod],
   ];
+  const boxX = 118;
+  const boxW = W - 15 - boxX;
+  doc.setFillColor(...LIGHT);
+  doc.rect(boxX, y - 4, boxW, rows.length * 5.5 + 8, "F");
   doc.setFontSize(9);
-  for (const [k, v] of rows) {
-    doc.text(k, 140, y);
-    doc.text(v, 196, y, { align: "right" });
+  for (const [k, v, strong] of rows) {
+    if (strong) {
+      doc.setFillColor(...GREEN);
+      doc.rect(boxX, y - 4, boxW, 7, "F");
+      doc.setTextColor(255, 255, 255);
+      doc.setFont("helvetica", "bold");
+      doc.setFontSize(10);
+      doc.text(k, boxX + 2, y + 0.5);
+      doc.text(v, boxX + boxW - 2, y + 0.5, { align: "right" });
+      y += 7;
+      doc.setFont("helvetica", "normal");
+      doc.setFontSize(9);
+      continue;
+    }
+    doc.setTextColor(...GREY);
+    doc.text(k, boxX + 2, y);
+    doc.setTextColor(30, 30, 30);
+    doc.text(v, boxX + boxW - 2, y, { align: "right" });
     y += 5.5;
   }
+
+  // Savings banner
+  let bannerY = y + 6;
   if (savedAmt(sale) > 0) {
+    const text = `You saved ${inr(savedAmt(sale))} on this bill!`;
+    doc.setFillColor(...GREEN);
+    doc.rect(15, bannerY, W - 30, 9, "F");
+    doc.setTextColor(255, 255, 255);
+    doc.setFont("helvetica", "bold");
     doc.setFontSize(11);
-    doc.text(`You saved ${inr(savedAmt(sale))} on this bill!`, 14, y + 2);
-    y += 6;
+    doc.text(text, W / 2, bannerY + 6, { align: "center" });
+    bannerY += 14;
   }
+
+  // Amount in words (Indian numbering)
+  const words = numberToIndianWords(Math.round(sale.total));
+  doc.setTextColor(...GREY);
+  doc.setFont("helvetica", "bold");
   doc.setFontSize(8);
-  doc.text(s.footerNote, 14, y + 6);
+  doc.text("Amount in words:", 15, bannerY + 2);
+  doc.setFont("helvetica", "normal");
+  doc.text(`Rupees ${words} only`, 15, bannerY + 6.5);
+
+  // Footer
+  doc.setDrawColor(...GREEN);
+  doc.setLineWidth(0.4);
+  doc.line(15, 272, W - 15, 272);
+  doc.setTextColor(...GREY);
+  doc.setFontSize(8);
+  doc.text(s.footerNote, W / 2, 277, { align: "center" });
+  doc.setFont("helvetica", "bold");
+  doc.text(`For ${s.shopName}`, W - 15, 277, { align: "right" });
+  doc.setFont("helvetica", "normal");
+  doc.setFontSize(7);
+  doc.text("This is a computer generated invoice.", W / 2, 282, { align: "center" });
   return doc;
+}
+
+function numberToIndianWords(n: number): string {
+  const ones = [
+    "", "One", "Two", "Three", "Four", "Five", "Six", "Seven", "Eight", "Nine", "Ten",
+    "Eleven", "Twelve", "Thirteen", "Fourteen", "Fifteen", "Sixteen", "Seventeen", "Eighteen", "Nineteen",
+  ];
+  const tens = ["", "", "Twenty", "Thirty", "Forty", "Fifty", "Sixty", "Seventy", "Eighty", "Ninety"];
+  const two = (x: number): string =>
+    x < 20 ? ones[x] : `${tens[Math.floor(x / 10)]}${x % 10 ? " " + ones[x % 10] : ""}`;
+  const three = (x: number): string =>
+    (x >= 100 ? `${ones[Math.floor(x / 100)]} Hundred${x % 100 ? " " : ""}` : "") + (x % 100 ? two(x % 100) : "");
+  if (n === 0) return "Zero";
+  const crore = Math.floor(n / 10000000);
+  const lakh = Math.floor((n % 10000000) / 100000);
+  const thousand = Math.floor((n % 100000) / 1000);
+  const rest = n % 1000;
+  const parts: string[] = [];
+  if (crore) parts.push(`${three(crore)} Crore`);
+  if (lakh) parts.push(`${three(lakh)} Lakh`);
+  if (thousand) parts.push(`${three(thousand)} Thousand`);
+  if (rest) parts.push(three(rest));
+  return parts.join(" ");
 }
 
 export function downloadInvoice(sale: Sale, s: Settings) {

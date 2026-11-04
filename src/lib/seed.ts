@@ -4,7 +4,7 @@ const CLEAN_FLAG = "sgpos-clean-install-v2";
 
 export const DEFAULT_SETTINGS = {
   id: 1,
-  shopName: "My Grocery Shop",
+  shopName: "G.K Bazzar",
   address: "",
   mobile: "",
   email: "",
@@ -65,6 +65,9 @@ export async function seedDatabase(db: GroceryDB) {
 
   const settings = await db.settings.get(1);
   if (!settings) await db.settings.put({ ...DEFAULT_SETTINGS });
+  else if (settings.shopName === "My Grocery Shop") {
+    await db.settings.update(1, { shopName: "G.K Bazzar" });
+  }
 
   const staff = await db.employees.count();
   if (staff === 0) {
