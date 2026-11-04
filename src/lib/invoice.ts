@@ -9,6 +9,9 @@ export const mrpTotal = (sale: Sale) =>
 export const savedAmt = (sale: Sale) =>
   Math.max(0, Math.round((mrpTotal(sale) - sale.total) * 100) / 100);
 
+export const mrpDiscount = (sale: Sale) =>
+  Math.round(sale.items.reduce((s, i) => s + Math.max(0, (i.mrp || 0) - i.price) * i.qty, 0) * 100) / 100;
+
 export function buildInvoicePdf(sale: Sale, s: Settings) {
   const doc = new jsPDF();
   doc.setFontSize(16);
@@ -55,6 +58,7 @@ export function buildInvoicePdf(sale: Sale, s: Settings) {
   const rows: [string, string][] = [
     ["Total MRP", inr(mrpTotal(sale))],
     ["Subtotal", inr(sale.subtotal)],
+    ["Discount (MRP − our price)", "-" + inr(mrpDiscount(sale))],
     ["Item Discount", "-" + inr(sale.itemDiscount)],
     ["Bill Discount", "-" + inr(sale.billDiscount)],
     ["Taxable Value", inr(sale.taxable)],
@@ -123,6 +127,7 @@ export function thermalHtml(sale: Sale, s: Settings) {
   <table>
     <tr><td>Total MRP</td><td class="r">${mrpTotal(sale).toFixed(2)}</td></tr>
     <tr><td>Subtotal</td><td class="r">${sale.subtotal.toFixed(2)}</td></tr>
+    <tr><td>Discount (MRP-our price)</td><td class="r">-${mrpDiscount(sale).toFixed(2)}</td></tr>
     <tr><td>Discount</td><td class="r">-${(sale.itemDiscount + sale.billDiscount).toFixed(2)}</td></tr>
     <tr><td>CGST</td><td class="r">${sale.cgst.toFixed(2)}</td></tr>
     <tr><td>SGST</td><td class="r">${sale.sgst.toFixed(2)}</td></tr>
